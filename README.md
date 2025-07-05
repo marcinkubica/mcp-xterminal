@@ -1,4 +1,4 @@
-# Terminal MCP Server
+# Terminal MCP Server (!WIP DO NOT USE YET!)
 
 A Model Context Protocol (MCP) server that enables execution of terminal commands through Claude Desktop.
 
