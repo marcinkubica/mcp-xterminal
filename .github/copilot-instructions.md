@@ -46,15 +46,6 @@ if you need to run terminal commands for python always use source .venv/bin/acti
 fail if .venv is not available, inform the user, stop further attempts
 </python_terminal_commands>
 
-<knowledge_base>
-This project uses organized `.mdc` rules in `.cursor/rules/` that activate contextually
-.cursor/rules/langchain - Helpers for current LangChain knowledge
-.cursor/rules/project - Helpers for the project you work on in current repo
-  <important>
-    more context is available in ../langchain/docs/docs/concepts
-  </important>
-</knowledge_base>
-
 <critical type=self_support>
 if you ever need to produce code to support your work
 which is useful in many scenarios, most notably Test Driven Development
