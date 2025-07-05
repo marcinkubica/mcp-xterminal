@@ -19,7 +19,8 @@ alwaysApply: true
 <enforce mode="Autonomous">Unless told by user "mode=non-auto" *VERY STRONGLY* bias towards completing the entire task from start to finish without asking clarifying questions or waiting for user input. </enforce>
 <date>always use time tool when needing current date/time</date>
 <enforce mode="Autonomous">Fetch data, analyze, and generate output in a single pass. If data is missing, note it out loud to user and proceed.</enforce>
-<docs>when asked about current build state read folder building/</docs> 
+
+<docs>when asked about current build state read folder docs/building/</docs> 
 
 <critical type=code_changes>
   **never** remove and replace code with dummy code to get the tests passing.
@@ -28,7 +29,7 @@ alwaysApply: true
 
 <critical type=code_standards>
    - **Never** hardcode anything, always use config files and shell env vars
-   - .secrets file-name with credentials must be in .gitignore and r
+   - .secrets file-name with credentials must be in .gitignore
    - apply strigently principles of Clean Code by Robert C. Martin ("Uncle Bob")
    - apply strigently principles of Software Engineering by Dave Farley
 </critical>
@@ -46,11 +47,5 @@ fail if .venv is not available, inform the user, stop further attempts
 </python_terminal_commands>
 
 <critical type=self_support>
-if you ever need to produce code to support your work
-which is useful in many scenarios, most notably Test Driven Development
-***NEVER EVER** do this
-```
-cd {some_folder} && cat > src/static/watchman/vendors/datadog/logs_plugin.py << 'EOF'
-"...some big script"
-you are allowed otherwise for oneliners but keep them as short possible
+if you ever need to produce code to support your work **NEVER EVER** use `<< EOF` - just create the file
 </critical>
