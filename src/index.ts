@@ -290,7 +290,7 @@ class TerminalServer {
     this.server.setRequestHandler(CallToolRequestSchema, this.handleCallTool.bind(this));
   }
 
-  private async handleListTools() {
+  public async handleListTools() {
     const ToolInputSchema = ToolSchema.shape.inputSchema;
     type ToolInput = z.infer<typeof ToolInputSchema>;
 

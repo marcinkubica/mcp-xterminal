@@ -58,15 +58,3 @@ you are allowed otherwise for oneliners but keep them as short possible
 
 ---
 
-<critical type=terminal_commands>
-1. **ONLY** use following tools:
-   - `execute_command`
-   - `change_directory`
-   - `get_current_directory`
-   - `get_terminal_info`
-   - `list_allowed_commands`
-2. **IMPORTANT** INFORM USER IF TOOL DOESN"T SUPPORT YOUR NEEDS FOR THE TASK
-3. **IMPORTANT** NEVER BYPASS THE TOOLS, INFORM THE USER OF A PROBLEM
-4. **IMPORTANT** TOOLS NOT ALLOWED:
-   - `run_in_terminal`
-</critical>
