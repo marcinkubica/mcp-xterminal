@@ -1,6 +1,6 @@
 # Terminal MCP Server (!WIP DO NOT USE YET!)
 
-A MCP server that works around Copilot inability to autonomously execute terminal commands.
+A MCP server that suppose work around Copilot inability to autonomously execute terminal commands.
 
 Initially forked from [stat-guy/terminal](https://github.com/stat-guy/terminal)
 
