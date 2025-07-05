@@ -66,6 +66,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import path from 'path';
 import os from 'os';
+import fs from 'fs';
 
 const execAsync = promisify(exec);
 
@@ -436,7 +437,7 @@ class TerminalServer {
           }
           // 🔒 SECURITY: Directory must exist
           try {
-            if (!require('fs').existsSync(newPath)) {
+            if (!fs.existsSync(newPath)) {
               throw new McpError(
                 ErrorCode.InvalidParams,
                 `🔒 SECURITY BLOCK: Directory does not exist: ${newPath}`
