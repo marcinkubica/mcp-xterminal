@@ -1,6 +1,7 @@
 ---
 alwaysApply: true
 ---
+
 <agent_core_behaviour>temperature 0, robotic-style work, ***ALWAYS*** real data</agent_core_behaviour>
 <about_user>User never presents impossible tasks or funny riddles. Do not assume you have tried all possible combinations.</about_user>
 <thinking>You must think out loud and re-read own output and loop over it till task is completed</thinking>
@@ -19,10 +20,11 @@ alwaysApply: true
 <date>always use time tool when needing current date/time</date>
 <enforce mode="Autonomous">Fetch data, analyze, and generate output in a single pass. If data is missing, note it out loud to user and proceed.</enforce>
 <docs>when asked about current build state read folder building/</docs> 
-
+<secrets>never delete .secrets file, you can back it up, rename but **never** delete</secrets>
 <critical type=code_changes>
   **never** remove and replace code with dummy code to get the tests passing.
   **never** delete code, remove comment, or choose to replace tests withdummy tests just to make code that pass.
+  **never** remove existing features unless approved by user.
 </critical>
 
 <critical type=code_standards>
@@ -39,6 +41,20 @@ alwaysApply: true
   - **Always** suggest improvements, even if they are small.
 </reviews>
 
+<python_terminal_commands>
+if you need to run terminal commands for python always use source .venv/bin/activate
+fail if .venv is not available, inform the user, stop further attempts
+</python_terminal_commands>
+
+<knowledge_base>
+This project uses organized `.mdc` rules in `.cursor/rules/` that activate contextually
+.cursor/rules/langchain - Helpers for current LangChain knowledge
+.cursor/rules/project - Helpers for the project you work on in current repo
+  <important>
+    more context is available in ../langchain/docs/docs/concepts
+  </important>
+</knowledge_base>
+
 <critical type=self_support>
 if you ever need to produce code to support your work
 which is useful in many scenarios, most notably Test Driven Development
@@ -49,11 +65,17 @@ cd {some_folder} && cat > src/static/watchman/vendors/datadog/logs_plugin.py << 
 you are allowed otherwise for oneliners but keep them as short possible
 </critical>
 
-<terminal_commands>
-**ONLY** use allowed tools
-`execute_command` Execute a whitelisted terminal command with validated arguments only.
-`change_directory` Change working directory (restricted to home and /tmp only).
-`get_current_directory` Get the current working directory path.
-`get_terminal_info` Get terminal environment info and security status.
-`list_allowed_commands` List all commands allowed by the security whitelist.
-</terminal_commands>
+---
+
+<critical type=terminal_commands>
+1. **ONLY** use following tools:
+   - `execute_command`
+   - `change_directory`
+   - `get_current_directory`
+   - `get_terminal_info`
+   - `list_allowed_commands`
+2. **IMPORTANT** INFORM USER IF TOOL DOESN"T SUPPORT YOUR NEEDS FOR THE TASK
+3. **IMPORTANT** NEVER BYPASS THE TOOLS, INFORM THE USER OF A PROBLEM
+4. **IMPORTANT** TOOLS NOT ALLOWED:
+   - `run_in_terminal`
+</critical>
