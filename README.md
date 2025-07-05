@@ -103,7 +103,7 @@ To help steering agent in the correct direction :) add below to your `copilot-in
 </critical>
 ```
 
-This stanza is also already [provided](.github/copilot-instructions.md) in the project with other very useful directives for programming. Feel free to copy into your project.
+This stanza is also already [provided](.github/copilot-instructions.md) (view in raw) in the project with other very useful directives for programming. Feel free to copy into your project.
 
 ## Contributions
 
