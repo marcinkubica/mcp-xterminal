@@ -1,6 +1,8 @@
 # Terminal MCP Server (!WIP DO NOT USE YET!)
 
-A Model Context Protocol (MCP) server that enables execution of terminal commands through Claude Desktop.
+A MCP server that works around Copilot inability to autonomously execute terminal commands.
+
+Initially forked from [stat-guy/terminal](https://github.com/stat-guy/terminal)
 
 ## Features
 
@@ -303,7 +305,7 @@ For efficient development, use two terminal windows:
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+No point yet, this is nowhere finished =)
 
 ## License
 
