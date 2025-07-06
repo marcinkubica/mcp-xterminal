@@ -2,7 +2,7 @@
 
 ## Overview
 
-This proposal outlines a modular approach to command validation security levels in the MCP xterminal project. Instead of hardcoded aggressive security settings, the system will support three configurable validation types through the `COMMAND_VALIDATION_TYPE` environment variable.
+This proposal outlines a modular approach to command validation security levels in the MCP xterminal project. Instead of hardcoded aggressive security settings, the system will support three configurable validation types through the `COMMAND_VALIDATION` environment variable.
 
 ## Current State Analysis
 
@@ -26,10 +26,10 @@ Currently, the system has hardcoded aggressive security settings in `src/index.t
 ### Environment Variable Configuration
 ```bash
 # Set validation type
-export COMMAND_VALIDATION_TYPE=aggressive|medium|minimal|none
+export COMMAND_VALIDATION=aggressive|medium|minimal|none
 
 # Fallback to aggressive if not set
-COMMAND_VALIDATION_TYPE=${COMMAND_VALIDATION_TYPE:-aggressive}
+COMMAND_VALIDATION=${COMMAND_VALIDATION:-aggressive}
 ```
 
 ### Configuration Files Structure
@@ -288,7 +288,7 @@ limits:
 ### Phase 1: Configuration Infrastructure
 1. **Create YAML configuration files** for each validation level
 2. **Implement configuration loader** with YAML parsing
-3. **Add environment variable detection** (`COMMAND_VALIDATION_TYPE`)
+3. **Add environment variable detection** (`COMMAND_VALIDATION`)
 4. **Create validation schema** for configuration validation
 
 ### Phase 2: Refactor Validation Logic
@@ -333,10 +333,14 @@ src/
 └── types.ts                       # Add configuration interfaces
 ```
 
+### Confirm need for both files
+src/index_secure.ts
+src/index.ts
+
 ## Security Considerations
 
 ### Migration Safety
-- **Default to aggressive** if `COMMAND_VALIDATION_TYPE` is not set
+- **Default to aggressive** if `COMMAND_VALIDATION` is not set
 - **Validate configuration files** at startup
 - **Fail safe** - if config loading fails, use aggressive hardcoded fallback
 

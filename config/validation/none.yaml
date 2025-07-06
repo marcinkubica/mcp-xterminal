@@ -1,0 +1,16 @@
+validation_level: none
+description: "Zero security limits - complete freedom (maximum trust only, also UNSAFE)"
+allowed_commands: {}  # Empty = all commands allowed
+forbidden_patterns: []  # No restrictions
+
+file_path_restrictions:
+  enabled: false
+
+environment_policy:
+  mode: passthrough
+
+limits:
+  max_arguments: -1      # No limit (-1 = unlimited)
+  max_command_length: -1 # No limit (-1 = unlimited)
+  timeout_max: -1        # No limit (-1 = unlimited)
+  timeout_default: -1    # No limit (-1 = unlimited)

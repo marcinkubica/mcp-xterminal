@@ -63,7 +63,7 @@ describe('Server Lifecycle Tests', () => {
       expect(result.content[0].text).toMatch(/currentDirectory:/);
       expect(result.content[0].text).toMatch(/lastCommand: null/);
       expect(result.content[0].text).toMatch(/lastExitCode: null/);
-      expect(result.content[0].text).toMatch(/securityMode: 🔒 WHITELIST_ENABLED/);
+      expect(result.content[0].text).toMatch(/securityMode: 🔒 AGGRESSIVE_ENABLED/);
       expect(result.content[0].text).toMatch(/allowedCommands: 28/);
     });
   });

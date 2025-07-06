@@ -1,0 +1,19 @@
+validation_level: minimal
+description: "Minimal security - basic safety nets for trusted environments"
+allowed_commands: {}  # Empty = all commands allowed
+
+forbidden_patterns:
+  - '\bsudo\b rm -rf /'  # Prevent system destruction
+  - '\bchmod\b 777 /'   # Prevent root permission changes
+
+file_path_restrictions:
+  enabled: false
+
+environment_policy:
+  mode: passthrough
+
+limits:
+  max_arguments: 100
+  max_command_length: 10000
+  timeout_max: 300000  # 5 minutes
+  timeout_default: 30000

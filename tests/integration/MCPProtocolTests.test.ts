@@ -42,7 +42,7 @@ describe('MCP Protocol Integration Tests', () => {
       expect(infoText).toMatch(/home:/);
       expect(infoText).toMatch(/platform:/);
       expect(infoText).toMatch(/currentDirectory:/);
-      expect(infoText).toMatch(/securityMode: 🔒 WHITELIST_ENABLED/);
+      expect(infoText).toMatch(/securityMode: 🔒 AGGRESSIVE_ENABLED/);
       expect(infoText).toMatch(/allowedCommands:/);
     });
 
@@ -98,13 +98,12 @@ describe('MCP Protocol Integration Tests', () => {
       expect(result.content[0].type).toBe('text');
       
       const commandListText = result.content[0].text;
-      expect(commandListText).toMatch(/🔒 SECURITY: Whitelisted Commands Only/);
+      expect(commandListText).toMatch(/🔒 SECURITY: AGGRESSIVE Mode - Whitelisted Commands Only/);
       expect(commandListText).toMatch(/Allowed commands:/);
       expect(commandListText).toMatch(/🔒 ls: List directory contents/);
       expect(commandListText).toMatch(/🔒 pwd: Print working directory/);
       expect(commandListText).toMatch(/🔒 whoami: Show current user/);
-      expect(commandListText).toMatch(/🔒 Note: All commands are validated/);
-      expect(commandListText).toMatch(/🔒 Dangerous commands like rm, curl, sudo, etc. are BLOCKED/);
+      expect(commandListText).toMatch(/🔒 Note: All commands are validated against security patterns/);
     });
 
     it('should list all whitelisted commands with descriptions', async () => {
@@ -140,9 +139,8 @@ describe('MCP Protocol Integration Tests', () => {
       });
       
       const commandListText = result.content[0].text;
-      expect(commandListText).toMatch(/🔒 SECURITY: Whitelisted Commands Only/);
+      expect(commandListText).toMatch(/🔒 SECURITY: AGGRESSIVE Mode - Whitelisted Commands Only/);
       expect(commandListText).toMatch(/🔒 Note: All commands are validated against security patterns/);
-      expect(commandListText).toMatch(/🔒 Dangerous commands like rm, curl, sudo, etc. are BLOCKED/);
     });
   });
 
