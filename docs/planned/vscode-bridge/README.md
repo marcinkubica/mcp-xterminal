@@ -26,6 +26,7 @@ The VS Code Bridge Extension allows mcp-xterminal to execute its validated comma
 - **Shell Integration**: Leverages VS Code's shell integration for better feedback
 - **Security Preservation**: All mcp-xterminal security validations remain intact
 - **Backward Compatibility**: Original mcp-xterminal continues to work unchanged
+- **Output Capture**: Terminal output is captured and returned to the MCP client
 
 ### Key Benefits
 
@@ -34,6 +35,7 @@ The VS Code Bridge Extension allows mcp-xterminal to execute its validated comma
 - Terminal output appears in VS Code's integrated terminal
 - No security compromise - all validations preserved
 - Multiple execution modes (bridge or direct)
+- **Real-time Output Capture**: Command output is captured and returned to MCP clients
 
 ## Architecture
 
@@ -193,6 +195,16 @@ mcp-xterminal-bridge/
           "type": "boolean",
           "default": false,
           "description": "Enable debug logging for troubleshooting"
+        },
+        "mcpXterminalBridge.captureOutput": {
+          "type": "boolean",
+          "default": true,
+          "description": "Capture command output and return it to MCP clients"
+        },
+        "mcpXterminalBridge.outputTimeout": {
+          "type": "number",
+          "default": 30000,
+          "description": "Timeout for command execution in milliseconds"
         }
       }
     },
@@ -501,16 +513,27 @@ export class McpClient {
             const result = await this.terminalManager.executeCommand(
                 args.command,
                 args.args || [],
-                args.options || {}
+                { ...args.options || {}, captureOutput: true }
             );
             
             this.outputChannel.appendLine(`Command executed: ${args.command} ${(args.args || []).join(' ')}`);
+            
+            // Format response with captured output
+            let responseText = `Command executed successfully in VS Code terminal.\nExit code: ${result.exitCode}`;
+            
+            if (result.output) {
+                responseText += `\n\nOutput:\n${result.output}`;
+            }
+            
+            if (result.error) {
+                responseText += `\n\nError output:\n${result.error}`;
+            }
             
             return {
                 content: [
                     {
                         type: 'text',
-                        text: `Command executed successfully in VS Code terminal.\nExit code: ${result.exitCode}\nOutput: ${result.output || 'See terminal for output'}`
+                        text: responseText
                     }
                 ]
             };
@@ -657,6 +680,7 @@ export class TerminalManager {
         cwd?: string;
         timeout?: number;
         env?: Record<string, string>;
+        captureOutput?: boolean;
     } = {}): Promise<CommandResult> {
         const terminal = this.getOrCreateTerminal();
         terminal.show(true);
@@ -674,19 +698,23 @@ export class TerminalManager {
             this.outputChannel.appendLine(`Executing: ${fullCommand}`);
         }
         
-        return new Promise((resolve, reject) => {
-            if (terminal.shellIntegration) {
-                // Use shell integration for better tracking
-                this.executeWithShellIntegration(terminal, command, args, options)
-                    .then(resolve)
-                    .catch(reject);
-            } else {
-                // Fallback to sendText
-                this.executeWithSendText(terminal, fullCommand, options)
-                    .then(resolve)
-                    .catch(reject);
-            }
-        });
+        // Determine capture mode from configuration
+        const shouldCaptureOutput = options.captureOutput ?? config.get<boolean>('captureOutput', true);
+        
+        // Choose execution method based on requirements
+        if (shouldCaptureOutput) {
+            // Use subprocess with output capture (default)
+            return this.executeWithOutputCapture(command, args, {
+                ...options,
+                timeout: options.timeout || config.get<number>('outputTimeout', 30000)
+            });
+        } else if (terminal.shellIntegration) {
+            // Use shell integration for better tracking
+            return this.executeWithShellIntegration(terminal, command, args, options);
+        } else {
+            // Fallback to sendText
+            return this.executeWithSendText(terminal, fullCommand, options);
+        }
     }
     
     private async executeWithShellIntegration(
@@ -702,6 +730,7 @@ export class TerminalManager {
             }
             
             const execution = terminal.shellIntegration.executeCommand(command, args);
+            let outputBuffer = '';
             
             // Set up timeout
             const timeout = options.timeout || 30000; // 30 second default
@@ -709,12 +738,19 @@ export class TerminalManager {
                 reject(new Error(`Command timed out after ${timeout}ms`));
             }, timeout);
             
+            // Listen for output data if available
+            if (execution.read) {
+                execution.read.onDidWrite((data) => {
+                    outputBuffer += data;
+                });
+            }
+            
             // Wait for completion
             execution.exitCode.then((exitCode) => {
                 clearTimeout(timeoutId);
                 resolve({
                     exitCode: exitCode || 0,
-                    output: 'Command completed (see terminal for output)'
+                    output: outputBuffer || 'Command completed (output captured in terminal)'
                 });
             }).catch((error) => {
                 clearTimeout(timeoutId);
@@ -739,6 +775,69 @@ export class TerminalManager {
                     output: 'Command sent to terminal (exit code unavailable without shell integration)'
                 });
             }, 1000);
+        });
+    }
+    
+    // Enhanced method that captures output while displaying in terminal
+    private async executeWithOutputCapture(
+        command: string,
+        args: string[],
+        options: any
+    ): Promise<CommandResult> {
+        const { spawn } = require('child_process');
+        const terminal = this.getOrCreateTerminal();
+        
+        // Show command in terminal for user visibility
+        const fullCommand = `${command} ${args.join(' ')}`;
+        terminal.show(true);
+        terminal.sendText(`# Executing: ${fullCommand}`, true);
+        
+        return new Promise((resolve, reject) => {
+            const childProcess = spawn(command, args, {
+                cwd: options.cwd || this.currentDirectory,
+                env: { ...process.env, ...options.env },
+                stdio: ['pipe', 'pipe', 'pipe']
+            });
+            
+            let stdout = '';
+            let stderr = '';
+            
+            // Capture output
+            childProcess.stdout.on('data', (data) => {
+                const output = data.toString();
+                stdout += output;
+                // Also display in terminal
+                terminal.sendText(output, false);
+            });
+            
+            childProcess.stderr.on('data', (data) => {
+                const output = data.toString();
+                stderr += output;
+                // Also display in terminal
+                terminal.sendText(output, false);
+            });
+            
+            childProcess.on('close', (code) => {
+                const result = {
+                    exitCode: code || 0,
+                    output: stdout,
+                    error: stderr
+                };
+                resolve(result);
+            });
+            
+            childProcess.on('error', (error) => {
+                reject(new Error(`Command failed: ${error.message}`));
+            });
+            
+            // Set up timeout
+            const timeout = options.timeout || 30000;
+            setTimeout(() => {
+                if (!childProcess.killed) {
+                    childProcess.kill();
+                    reject(new Error(`Command timed out after ${timeout}ms`));
+                }
+            }, timeout);
         });
     }
     
@@ -794,6 +893,8 @@ export interface BridgeConfig {
     securityLevel: 'aggressive' | 'medium' | 'minimal' | 'none';
     boundaryDirectory: string;
     debugLogging: boolean;
+    captureOutput: boolean;
+    outputTimeout: number;
 }
 
 export class ConfigManager {
@@ -808,7 +909,9 @@ export class ConfigManager {
             environmentVariables: config.get<Record<string, string>>('environmentVariables', {}),
             securityLevel: config.get<'aggressive' | 'medium' | 'minimal' | 'none'>('securityLevel', 'aggressive'),
             boundaryDirectory: config.get<string>('boundaryDirectory', ''),
-            debugLogging: config.get<boolean>('debugLogging', false)
+            debugLogging: config.get<boolean>('debugLogging', false),
+            captureOutput: config.get<boolean>('captureOutput', true),
+            outputTimeout: config.get<number>('outputTimeout', 30000)
         };
     }
     
@@ -1574,3 +1677,32 @@ Key benefits:
 - **Full Configuration**: Comprehensive settings for all use cases
 
 The bridge extension serves as a transparent intermediary that enhances the user experience while preserving all the security benefits that make MCP-XTerminal valuable for AI agent interactions.
+
+## Output Capture Mechanism
+
+The bridge extension implements a dual-mode output capture system:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Command Execution Flow                       │
+├─────────────────────────────────────────────────────────────────┤
+│  1. MCP Client Request                                          │
+│     ↓                                                           │
+│  2. Bridge Extension Validation                                 │
+│     ↓                                                           │
+│  3. Dual Execution:                                             │
+│     ├─ Subprocess: Captures stdout/stderr                       │
+│     └─ VS Code Terminal: Shows command for user visibility      │
+│     ↓                                                           │
+│  4. Response with Captured Output                               │
+│     ↓                                                           │
+│  5. MCP Client Receives Full Output                             │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Key Features:**
+- **Dual Display**: Commands appear in VS Code terminal for user visibility
+- **Output Capture**: Subprocess captures stdout/stderr for MCP response
+- **Real-time Streaming**: Output streams to terminal as it's generated
+- **Exit Code Tracking**: Proper exit code handling and reporting
+- **Error Handling**: Separate capture of stdout and stderr streams
