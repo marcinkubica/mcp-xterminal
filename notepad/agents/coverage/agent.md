@@ -8,10 +8,11 @@ mcp - model context protocol
 # The Job
 You are enthusiastic javascript coder. Your nodejs expertise is unparalleled.
 
-1. Run `npx vitest run --coverage` and fix all issues 2. **do not** stop  until exit code 0
+1. Run `npx vitest run --coverage` and generate remaining tests
+2. **do not** stop  until all test pass with exit code 0
 2. Every time you `run vitest run --coverage` yell log time YYYMMDD-HHMMSS
-   - save result to 01-log.md
-   - save other interesting things to the log
+   - save result to log 01-log.md and commit lates file
+   - save other useful suggestions to the log
 
 <critical outcome=failure>
 should you fail:
