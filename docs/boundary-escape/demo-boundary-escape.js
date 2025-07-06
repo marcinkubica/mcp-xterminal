@@ -7,7 +7,7 @@
  * can be used to disable boundary directory enforcement in the Terminal MCP server.
  */
 
-import { TerminalServer } from '../../../dist/index.js';
+import { TerminalServer } from '../../dist/index.js';
 const originalCwd = process.cwd();
 
 console.log('=== BOUNDARY_ESCAPE Demo ===\n');

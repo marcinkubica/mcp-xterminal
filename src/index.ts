@@ -1,5 +1,8 @@
 // --- BOUNDARY DIR ENFORCEMENT HELPERS ---
 
+// Save the original working directory before any changes
+const ORIGINAL_WORKING_DIR = process.cwd();
+
 function getBoundaryDir(): string {
   return process.env.BOUNDARY_DIR || '/tmp';
 }
@@ -7,6 +10,9 @@ function getBoundaryDir(): string {
 function isBoundaryEscapeEnabled(): boolean {
   return process.env.BOUNDARY_ESCAPE === 'true';
 }
+
+// Export the original working directory for use by config loaders
+export const getOriginalWorkingDir = () => ORIGINAL_WORKING_DIR;
 
 // Ensure process starts in boundary dir unless escape is enabled
 if (!isBoundaryEscapeEnabled()) {
@@ -67,82 +73,12 @@ import { promisify } from 'util';
 import path from 'path';
 import os from 'os';
 import fs from 'fs';
+import { ValidatorFactory } from './validation/ValidatorFactory.js';
+import { BaseValidator } from './validation/BaseValidator.js';
 
 const execAsync = promisify(exec);
 
-// Safe command whitelist - only these commands are allowed
-interface CommandConfig {
-  allowedArgs: readonly string[];
-  description: string;
-  requiresFile?: boolean;
-}
-
-const ALLOWED_COMMANDS: Record<string, CommandConfig> = {
-  // File operations (read-only)
-  'ls': { allowedArgs: ['-l', '-a', '-la', '-h', '-R', '--help'], description: 'List directory contents' },
-  'cat': { allowedArgs: ['--help'], description: 'Display file contents', requiresFile: true },
-  'head': { allowedArgs: ['-n', '--help'], description: 'Display first lines of file', requiresFile: true },
-  'tail': { allowedArgs: ['-n', '--help'], description: 'Display last lines of file', requiresFile: true },
-  'file': { allowedArgs: ['--help'], description: 'Determine file type', requiresFile: true },
-  'wc': { allowedArgs: ['-l', '-w', '-c', '--help'], description: 'Word, line, character count', requiresFile: true },
-  
-  // Directory operations (safe)
-  'pwd': { allowedArgs: ['--help'], description: 'Print working directory' },
-  'find': { allowedArgs: ['-name', '-type', '-maxdepth', '--help'], description: 'Find files and directories' },
-  'tree': { allowedArgs: ['-L', '-a', '--help'], description: 'Display directory tree' },
-  
-  // System information (read-only)
-  'whoami': { allowedArgs: ['--help'], description: 'Show current user' },
-  'id': { allowedArgs: ['--help'], description: 'Show user and group IDs' },
-  'uname': { allowedArgs: ['-a', '-r', '-s', '--help'], description: 'System information' },
-  'date': { allowedArgs: ['--help'], description: 'Show current date and time' },
-  'uptime': { allowedArgs: ['--help'], description: 'Show system uptime' },
-  'df': { allowedArgs: ['-h', '--help'], description: 'Show disk space usage' },
-  'free': { allowedArgs: ['-h', '--help'], description: 'Show memory usage' },
-  'ps': { allowedArgs: ['aux', '--help'], description: 'Show running processes' },
-  
-  // Development tools (safe operations)
-  'node': { allowedArgs: ['--version', '--help'], description: 'Node.js version' },
-  'npm': { allowedArgs: ['--version', 'list', '--help'], description: 'NPM operations (limited)' },
-  'git': { allowedArgs: ['status', 'log', '--oneline', 'branch', 'diff', '--help'], description: 'Git operations (read-only)' },
-  'which': { allowedArgs: ['--help'], description: 'Locate command' },
-  'type': { allowedArgs: ['--help'], description: 'Display command type' },
-  
-  // Text processing (safe)
-  'grep': { allowedArgs: ['-n', '-i', '-r', '--help'], description: 'Search text patterns', requiresFile: true },
-  'sort': { allowedArgs: ['-n', '-r', '--help'], description: 'Sort lines', requiresFile: true },
-  'uniq': { allowedArgs: ['-c', '--help'], description: 'Report unique lines', requiresFile: true },
-  
-  // Help and documentation
-  'man': { allowedArgs: ['--help'], description: 'Manual pages', requiresFile: true },
-  'help': { allowedArgs: [], description: 'Help command' },
-  'echo': { allowedArgs: ['--help'], description: 'Display text (limited)' }
-};
-
-// Dangerous patterns that should never be allowed
-const FORBIDDEN_PATTERNS = [
-  // Command injection attempts
-  /[;&|`$(){}]/,
-  // File operations
-  /\brm\b|\bmv\b|\bcp\b|\btouch\b|\bmkdir\b|\brmdir\b/,
-  // Network operations
-  /\bcurl\b|\bwget\b|\bssh\b|\bscp\b|\brsync\b|\bftp\b|\btelnet\b/,
-  // System modification
-  /\bsudo\b|\bsu\b|\bchmod\b|\bchown\b|\bmount\b|\bumount\b/,
-  // Process control
-  /\bkill\b|\bkillall\b|\bnohup\b|\bbg\b|\bfg\b|\bjobs\b/,
-  // Package management
-  /\bapt\b|\byum\b|\bpip\b|\binstall\b|\bremove\b|\bupdate\b|\bupgrade\b/,
-  // Editors and interactive tools
-  /\bvi\b|\bvim\b|\bnano\b|\bemacs\b|\btop\b|\bhtop\b|\bless\b|\bmore\b/,
-  // Shell features
-  /\bsource\b|\b\.\b|\bexport\b|\balias\b|\bunalias\b|\bhistory\b/,
-  // Redirection and pipes
-  /[<>]/,
-  // Dangerous characters
-  /[*?[\]]/
-];
-
+// Legacy interface for backward compatibility
 interface CommandValidationResult {
   isValid: boolean;
   sanitizedCommand?: string;
@@ -150,78 +86,18 @@ interface CommandValidationResult {
   error?: string;
 }
 
-function validateAndSanitizeCommand(command: string, args: string[]): CommandValidationResult {
-  // Basic input validation
-  if (!command || typeof command !== 'string') {
-    return { isValid: false, error: 'Command must be a non-empty string' };
-  }
-
-  // Normalize command (remove leading/trailing whitespace, convert to lowercase)
-  const normalizedCommand = command.trim().toLowerCase();
-  
-  // Check if command is in whitelist
-  if (!(normalizedCommand in ALLOWED_COMMANDS)) {
-    return { 
-      isValid: false, 
-      error: `Command '${normalizedCommand}' is not in the allowed whitelist. Allowed commands: ${Object.keys(ALLOWED_COMMANDS).join(', ')}` 
+// Legacy function that now uses the new validation system
+async function validateAndSanitizeCommand(command: string, args: string[]): Promise<CommandValidationResult> {
+  try {
+    const validator = await ValidatorFactory.getValidator();
+    return validator.validateCommand(command, args);
+  } catch (error) {
+    console.error('Error in validation:', error);
+    return {
+      isValid: false,
+      error: `Validation error: ${error instanceof Error ? error.message : String(error)}`
     };
   }
-
-  const commandConfig = ALLOWED_COMMANDS[normalizedCommand as keyof typeof ALLOWED_COMMANDS];
-
-  // Check for forbidden patterns in command and args
-  const fullCommandString = `${normalizedCommand} ${args.join(' ')}`;
-  for (const pattern of FORBIDDEN_PATTERNS) {
-    if (pattern.test(fullCommandString)) {
-      return { 
-        isValid: false, 
-        error: `Command contains forbidden pattern: ${pattern.source}` 
-      };
-    }
-  }
-
-  // Validate and strictly enforce allowed arguments
-  const sanitizedArgs: string[] = [];
-  for (const arg of args) {
-    if (typeof arg !== 'string') {
-      return { isValid: false, error: 'All arguments must be strings' };
-    }
-    const trimmedArg = arg.trim();
-    if (!trimmedArg) continue; // Skip empty args
-
-    // Strict: Only allow arguments explicitly in allowedArgs, or file paths if requiresFile
-    let isAllowed = false;
-    if (commandConfig.allowedArgs.length > 0) {
-      isAllowed = commandConfig.allowedArgs.includes(trimmedArg);
-    }
-    // Allow file paths for commands that require a file, but only if the arg does not start with '-'
-    if (commandConfig.requiresFile && !trimmedArg.startsWith('-')) {
-      // Only allow safe file path patterns
-      if (/^\/?[a-zA-Z0-9._\/-]+$/.test(trimmedArg)) {
-        isAllowed = true;
-      } else {
-        return { isValid: false, error: `File path argument '${trimmedArg}' is not allowed` };
-      }
-    }
-    if (!isAllowed) {
-      return { isValid: false, error: `Argument '${trimmedArg}' not allowed for command '${normalizedCommand}'` };
-    }
-    sanitizedArgs.push(trimmedArg);
-  }
-
-  // Limit argument count to prevent abuse
-  if (sanitizedArgs.length > 10) {
-    return { 
-      isValid: false, 
-      error: 'Too many arguments (maximum 10 allowed)' 
-    };
-  }
-
-  return {
-    isValid: true,
-    sanitizedCommand: normalizedCommand,
-    sanitizedArgs
-  };
 }
 
 const ExecuteCommandSchema = z.object({
@@ -290,7 +166,7 @@ class TerminalServer {
     this.server.setRequestHandler(CallToolRequestSchema, this.handleCallTool.bind(this));
   }
 
-  private async handleListTools() {
+  public async handleListTools() {
     const ToolInputSchema = ToolSchema.shape.inputSchema;
     type ToolInput = z.infer<typeof ToolInputSchema>;
 
@@ -353,7 +229,7 @@ class TerminalServer {
     } = {}
   ) {
     // 🔒 SECURITY: Validate and sanitize the command first
-    const validation = validateAndSanitizeCommand(command, args);
+    const validation = await validateAndSanitizeCommand(command, args);
     if (!validation.isValid) {
       throw new McpError(ErrorCode.InvalidParams, `🔒 SECURITY BLOCK: ${validation.error}`);
     }
@@ -361,18 +237,14 @@ class TerminalServer {
     const { sanitizedCommand, sanitizedArgs } = validation;
     const fullCommand = `${sanitizedCommand} ${sanitizedArgs!.join(' ')}`;
     
-    // 🔒 SECURITY: Enforce strict execution limits
+    // Get validator for environment and timeout configuration
+    const validator = await ValidatorFactory.getValidator();
+    
+    // 🔒 SECURITY: Enforce execution limits based on validation level
     const execOptions = {
       cwd: options.cwd || this.state.currentDirectory,
-      timeout: Math.min(options.timeout || 10000, 10000), // Max 10 seconds
-      env: {
-        // 🔒 SECURITY: Only pass essential environment variables
-        PATH: (globalThis as any).process.env.PATH,
-        HOME: (globalThis as any).process.env.HOME,
-        USER: (globalThis as any).process.env.USER,
-        SHELL: (globalThis as any).process.env.SHELL,
-        ...options.env // Allow specific additional env vars
-      },
+      timeout: validator.getTimeout(options.timeout),
+      env: validator.buildEnvironment(options.env),
       // Additional security options
       windowsHide: true // Hide windows on Windows
     };
@@ -407,7 +279,7 @@ class TerminalServer {
           }
 
           // 🔒 SECURITY: Validate command and arguments before execution
-          const validation = validateAndSanitizeCommand(parsed.data.command, parsed.data.args);
+          const validation = await validateAndSanitizeCommand(parsed.data.command, parsed.data.args);
           if (!validation.isValid) {
             throw new McpError(ErrorCode.InvalidParams, `🔒 SECURITY BLOCK: ${validation.error}`);
           }
@@ -471,6 +343,7 @@ class TerminalServer {
         }
 
         case "get_terminal_info": {
+          const validator = await ValidatorFactory.getValidator();
           const info = {
             shell: (globalThis as any).process.env.SHELL || 'unknown',
             user: (globalThis as any).process.env.USER || os.userInfo().username,
@@ -479,8 +352,9 @@ class TerminalServer {
             currentDirectory: this.state.currentDirectory,
             lastCommand: this.state.lastCommand,
             lastExitCode: this.state.lastExitCode,
-            securityMode: '🔒 WHITELIST_ENABLED',
-            allowedCommands: Object.keys(ALLOWED_COMMANDS).length
+            securityMode: `🔒 ${validator.getValidationLevel().toUpperCase()}_ENABLED`,
+            validationLevel: validator.getValidationLevel(),
+            allowedCommands: validator.getAllowedCommandsCount()
           };
 
           return {
@@ -494,16 +368,30 @@ class TerminalServer {
         }
 
         case "list_allowed_commands": {
-          const commandList = Object.entries(ALLOWED_COMMANDS)
-            .map(([cmd, config]) => `🔒 ${cmd}: ${config.description}`)
-            .join('\n');
+          const validator = await ValidatorFactory.getValidator();
+          const config = (validator as any).config; // Access config for command listing
+          
+          if (Object.keys(config.allowed_commands).length === 0) {
+            // No whitelist - all commands allowed
+            return {
+              content: [{
+                type: "text",
+                text: `🔒 SECURITY: ${validator.getValidationLevel().toUpperCase()} Mode\n\n${validator.getDescription()}\n\n⚠️ All commands are allowed in this validation level.\n\nActive restrictions:\n- Forbidden patterns: ${config.forbidden_patterns.length}\n- File path restrictions: ${config.file_path_restrictions.enabled ? 'Enabled' : 'Disabled'}\n- Environment policy: ${config.environment_policy.mode}`
+              }]
+            };
+          } else {
+            // Whitelist mode
+            const commandList = Object.entries(config.allowed_commands)
+              .map(([cmd, commandConfig]: [string, any]) => `🔒 ${cmd}: ${commandConfig.description}`)
+              .join('\n');
 
-          return {
-            content: [{
-              type: "text",
-              text: `🔒 SECURITY: Whitelisted Commands Only\n\nAllowed commands:\n${commandList}\n\n🔒 Note: All commands are validated against security patterns and argument restrictions.\n🔒 Dangerous commands like rm, curl, sudo, etc. are BLOCKED.`
-            }]
-          };
+            return {
+              content: [{
+                type: "text",
+                text: `🔒 SECURITY: ${validator.getValidationLevel().toUpperCase()} Mode - Whitelisted Commands Only\n\n${validator.getDescription()}\n\nAllowed commands:\n${commandList}\n\n🔒 Note: All commands are validated against security patterns and argument restrictions.`
+              }]
+            };
+          }
         }
 
         default:
@@ -522,11 +410,21 @@ class TerminalServer {
   async run(): Promise<void> {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
+    
+    // Get validator information for startup logging
+    const validator = await ValidatorFactory.getValidator();
+    
     console.error("🔒 SECURE Terminal MCP Server running on stdio");
-    console.error("🔒 Security: Command whitelist ENABLED");
-    console.error(`🔒 Allowed commands: ${Object.keys(ALLOWED_COMMANDS).length}`);
+    console.error(`🔒 Security: ${validator.getValidationLevel().toUpperCase()} validation enabled`);
+    console.error(`🔒 ${validator.getDescription()}`);
+    console.error(`🔒 Allowed commands: ${validator.getAllowedCommandsCount()}`);
     console.error("🔒 Current directory:", this.state.currentDirectory);
-    console.error("🔒 Dangerous commands BLOCKED (rm, curl, sudo, etc.)");
+    
+    if (validator.getValidationLevel() === 'aggressive') {
+      console.error("🔒 Dangerous commands BLOCKED (rm, curl, sudo, etc.)");
+    } else if (validator.getValidationLevel() === 'none') {
+      console.error("🚨 WARNING: ALL SECURITY PROTECTIONS DISABLED!");
+    }
   }
 }
 

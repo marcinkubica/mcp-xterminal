@@ -1,0 +1,124 @@
+validation_level: aggressive
+description: "Maximum security - suitable for untrusted environments"
+allowed_commands:
+  ls:
+    allowed_args: ['-l', '-a', '-la', '-h', '-R', '--help']
+    description: 'List directory contents'
+    max_args: 3
+  cat:
+    allowed_args: ['--help']
+    description: 'Display file contents'
+    requires_file: true
+  head:
+    allowed_args: ['-n', '--help']
+    description: 'Display first lines of file'
+    requires_file: true
+  tail:
+    allowed_args: ['-n', '--help']
+    description: 'Display last lines of file'
+    requires_file: true
+  file:
+    allowed_args: ['--help']
+    description: 'Determine file type'
+    requires_file: true
+  wc:
+    allowed_args: ['-l', '-w', '-c', '--help']
+    description: 'Word, line, character count'
+    requires_file: true
+  pwd:
+    allowed_args: ['--help']
+    description: 'Print working directory'
+  find:
+    allowed_args: ['-name', '-type', '-maxdepth', '--help']
+    description: 'Find files and directories'
+  tree:
+    allowed_args: ['-L', '-a', '--help']
+    description: 'Display directory tree'
+  whoami:
+    allowed_args: ['--help']
+    description: 'Show current user'
+  id:
+    allowed_args: ['--help']
+    description: 'Show user and group IDs'
+  uname:
+    allowed_args: ['-a', '-r', '-s', '--help']
+    description: 'System information'
+  date:
+    allowed_args: ['--help']
+    description: 'Show current date and time'
+  uptime:
+    allowed_args: ['--help']
+    description: 'Show system uptime'
+  df:
+    allowed_args: ['-h', '--help']
+    description: 'Show disk space usage'
+  free:
+    allowed_args: ['-h', '--help']
+    description: 'Show memory usage'
+  ps:
+    allowed_args: ['aux', '--help']
+    description: 'Show running processes'
+  node:
+    allowed_args: ['--version', '--help']
+    description: 'Node.js version'
+  npm:
+    allowed_args: ['--version', 'list', '--help']
+    description: 'NPM operations (limited)'
+  git:
+    allowed_args: ['status', 'log', '--oneline', 'branch', 'diff', '--help']
+    description: 'Git operations (read-only)'
+  which:
+    allowed_args: ['--help']
+    description: 'Locate command'
+  type:
+    allowed_args: ['--help']
+    description: 'Display command type'
+  grep:
+    allowed_args: ['-n', '-i', '-r', '--help']
+    description: 'Search text patterns'
+    requires_file: true
+  sort:
+    allowed_args: ['-n', '-r', '--help']
+    description: 'Sort lines'
+    requires_file: true
+  uniq:
+    allowed_args: ['-c', '--help']
+    description: 'Report unique lines'
+    requires_file: true
+  man:
+    allowed_args: ['--help']
+    description: 'Manual pages'
+    requires_file: true
+  help:
+    allowed_args: []
+    description: 'Help command'
+  echo:
+    allowed_args: ['--help']
+    description: 'Display text (limited)'
+
+forbidden_patterns:
+  - '[;&|`$(){}]'
+  - '\brm\b|\bmv\b|\bcp\b|\btouch\b|\bmkdir\b|\brmdir\b'
+  - '\bcurl\b|\bwget\b|\bssh\b|\bscp\b|\brsync\b|\bftp\b|\btelnet\b'
+  - '\bsudo\b|\bsu\b|\bchmod\b|\bchown\b|\bmount\b|\bumount\b'
+  - '\bkill\b|\bkillall\b|\bnohup\b|\bbg\b|\bfg\b|\bjobs\b'
+  - '\bapt\b|\byum\b|\bpip\b|\binstall\b|\bremove\b|\bupdate\b|\bupgrade\b'
+  - '\bvi\b|\bvim\b|\bnano\b|\bemacs\b|\btop\b|\bhtop\b|\bless\b|\bmore\b'
+  - '\bsource\b|\b\.\b|\bexport\b|\balias\b|\bunalias\b|\bhistory\b'
+  - '[<>]'
+  - '[*?[\]]'
+
+file_path_restrictions:
+  enabled: true
+  pattern: '^/?[a-zA-Z0-9._/-]+$'
+  max_path_length: 255
+
+environment_policy:
+  mode: whitelist
+  allowed_vars: ['PATH', 'HOME', 'USER', 'SHELL']
+
+limits:
+  max_arguments: 10
+  max_command_length: 1000
+  timeout_max: 10000
+  timeout_default: 10000
