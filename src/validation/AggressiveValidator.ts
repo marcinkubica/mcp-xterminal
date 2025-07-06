@@ -38,14 +38,19 @@ export class AggressiveValidator extends BaseValidator {
       const trimmedArg = arg.trim();
       if (!trimmedArg) continue; // Skip empty args
 
+      // Handle both CommandConfig and string formats
+      const commandConfigObj = typeof commandConfig === 'string' 
+        ? { description: commandConfig, allowed_args: [] }
+        : commandConfig;
+
       // Check if argument is allowed
       let isAllowed = false;
-      if (commandConfig.allowed_args.length > 0) {
-        isAllowed = commandConfig.allowed_args.includes(trimmedArg);
+      if (commandConfigObj.allowed_args && commandConfigObj.allowed_args.length > 0) {
+        isAllowed = commandConfigObj.allowed_args.includes(trimmedArg);
       }
 
       // Allow file paths for commands that require a file, but only if the arg doesn't start with '-'
-      if (commandConfig.requires_file && !trimmedArg.startsWith('-')) {
+      if (commandConfigObj.requires_file && !trimmedArg.startsWith('-')) {
         if (this.validateFilePath(trimmedArg)) {
           isAllowed = true;
         } else {

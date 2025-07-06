@@ -1,10 +1,24 @@
 import * as yaml from 'js-yaml';
 import * as fs from 'fs';
 import * as path from 'path';
-import { ValidationConfig, ValidationLevel } from './ValidationConfig.js';
+import { ValidationConfig, ValidationLevel, CommandConfig } from './ValidationConfig.js';
+import { ValidationTypeResult } from './ValidationTypeDetector.js';
 
 export class ConfigLoader {
-  private static readonly CONFIG_DIR = path.join(process.cwd(), 'config', 'validation');
+  private static readonly CONFIG_DIR = ConfigLoader.getProjectConfigDir();
+  
+  /**
+   * Gets the project's config directory using import.meta.url
+   */
+  private static getProjectConfigDir(): string {
+    // Get the directory containing this module
+    const moduleDir = path.dirname(new URL(import.meta.url).pathname);
+    
+    // Navigate up to the project root (src/config -> src -> project root)
+    const projectRoot = path.join(moduleDir, '..', '..');
+    
+    return path.join(projectRoot, 'config', 'validation');
+  }
   
   /**
    * Loads validation configuration from YAML file
@@ -35,6 +49,68 @@ export class ConfigLoader {
       console.error(`🔒 Error loading configuration file ${configPath}:`, error);
       console.warn('🔒 Using hardcoded fallback configuration');
       return this.getHardcodedFallback(validationLevel);
+    }
+  }
+
+  /**
+   * Loads validation configuration from ValidationTypeResult
+   * @param validationTypeResult The validation type result from ValidationTypeDetector
+   * @returns The loaded configuration
+   */
+  static async loadConfigFromResult(validationTypeResult: ValidationTypeResult): Promise<ValidationConfig> {
+    if (validationTypeResult.type === 'builtin') {
+      return this.loadConfig(validationTypeResult.value as ValidationLevel);
+    } else {
+      return this.loadCustomConfig(validationTypeResult.value as string);
+    }
+  }
+
+  /**
+   * Loads custom validation configuration from a user-provided YAML file
+   * @param filePath The path to the custom YAML file
+   * @returns The loaded configuration
+   */
+  static async loadCustomConfig(filePath: string): Promise<ValidationConfig> {
+    let resolvedPath: string;
+    
+    if (path.isAbsolute(filePath)) {
+      resolvedPath = filePath;
+    } else {
+      // Try to resolve relative to the project root first
+      const moduleDir = path.dirname(new URL(import.meta.url).pathname);
+      const projectRoot = path.join(moduleDir, '..', '..');
+      resolvedPath = path.resolve(projectRoot, filePath);
+      
+      // If that doesn't exist, try current working directory
+      if (!fs.existsSync(resolvedPath)) {
+        resolvedPath = path.resolve(process.cwd(), filePath);
+      }
+    }
+    
+    try {
+      // Check if config file exists
+      if (!fs.existsSync(resolvedPath)) {
+        console.warn(`🔒 Custom configuration file not found: ${resolvedPath}, using aggressive fallback`);
+        return this.getHardcodedFallback('aggressive');
+      }
+
+      // Read and parse YAML file
+      const configContent = fs.readFileSync(resolvedPath, 'utf8');
+      const rawConfig = yaml.load(configContent);
+      
+      // Normalize the configuration to handle different formats
+      const config = this.normalizeConfig(rawConfig);
+      
+      // Validate the loaded configuration
+      this.validateCustomConfig(config, resolvedPath);
+      
+      console.log(`🔒 Loaded custom validation configuration from ${resolvedPath}`);
+      return config;
+      
+    } catch (error) {
+      console.error(`🔒 Error loading custom configuration file ${resolvedPath}:`, error);
+      console.warn('🔒 Using aggressive fallback configuration');
+      return this.getHardcodedFallback('aggressive');
     }
   }
 
@@ -74,6 +150,34 @@ export class ConfigLoader {
     
     if (!config.limits) {
       throw new Error('Configuration missing limits');
+    }
+  }
+
+  /**
+   * Validates the loaded custom configuration
+   * @param config The configuration to validate
+   * @param filePath The path to the custom config file
+   */
+  private static validateCustomConfig(config: ValidationConfig, filePath: string): void {
+    if (!config.validation_level) {
+      throw new Error('Configuration missing validation_level');
+    }
+    
+    if (!config.description) {
+      throw new Error('Configuration missing description');
+    }
+    
+    if (!Array.isArray(config.forbidden_patterns)) {
+      throw new Error('Configuration forbidden_patterns must be an array');
+    }
+    
+    // Log validation level from custom config
+    console.log(`🔒 Custom configuration validation level: ${config.validation_level}`);
+    
+    // Warn if custom config has no security restrictions
+    if (config.validation_level === 'none' || 
+        (config.allowed_commands && Object.keys(config.allowed_commands).length === 0)) {
+      console.warn('🚨 WARNING: Custom configuration has minimal or no security restrictions!');
     }
   }
 
@@ -270,5 +374,45 @@ export class ConfigLoader {
         timeout_default: -1 // No limit (-1 = unlimited)
       }
     };
+  }
+
+  /**
+   * Normalizes the configuration to ensure consistent format
+   * @param config The raw configuration from YAML
+   * @returns Normalized configuration
+   */
+  private static normalizeConfig(config: any): ValidationConfig {
+    // Handle simple string format for allowed_commands
+    if (config.allowed_commands && typeof Object.values(config.allowed_commands)[0] === 'string') {
+      const normalizedCommands: Record<string, CommandConfig> = {};
+      for (const [command, description] of Object.entries(config.allowed_commands as Record<string, string>)) {
+        normalizedCommands[command] = {
+          description,
+          allowed_args: config.allowed_arguments?.[command] || ['--help'], // Default to help flag
+          max_args: 15 // reasonable default
+        };
+      }
+      config.allowed_commands = normalizedCommands;
+    }
+
+    // Ensure whitelistedCommands for backward compatibility
+    if (config.allowed_commands && !config.whitelistedCommands) {
+      config.whitelistedCommands = {};
+      for (const [command, commandConfig] of Object.entries(config.allowed_commands as Record<string, CommandConfig>)) {
+        config.whitelistedCommands[command] = commandConfig.description;
+      }
+    }
+
+    // Handle timeout settings
+    if (config.limits && !config.maxTimeout) {
+      config.maxTimeout = config.limits.timeout_max;
+    }
+
+    // Handle environment policy
+    if (config.environment_policy && !config.environment) {
+      config.environment = config.environment_policy;
+    }
+
+    return config as ValidationConfig;
   }
 }

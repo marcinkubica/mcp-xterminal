@@ -1,5 +1,8 @@
 // --- BOUNDARY DIR ENFORCEMENT HELPERS ---
 
+// Save the original working directory before any changes
+const ORIGINAL_WORKING_DIR = process.cwd();
+
 function getBoundaryDir(): string {
   return process.env.BOUNDARY_DIR || '/tmp';
 }
@@ -7,6 +10,9 @@ function getBoundaryDir(): string {
 function isBoundaryEscapeEnabled(): boolean {
   return process.env.BOUNDARY_ESCAPE === 'true';
 }
+
+// Export the original working directory for use by config loaders
+export const getOriginalWorkingDir = () => ORIGINAL_WORKING_DIR;
 
 // Ensure process starts in boundary dir unless escape is enabled
 if (!isBoundaryEscapeEnabled()) {

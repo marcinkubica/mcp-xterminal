@@ -1,0 +1,122 @@
+validation_level: custom
+description: "Custom validation configuration - User-defined security rules"
+
+# Define allowed commands with descriptions
+allowed_commands:
+  ls: "List directory contents"
+  cat: "Display file contents"
+  pwd: "Print working directory"
+  whoami: "Show current user"
+  date: "Show current date and time"
+  echo: "Display text (limited arguments)"
+  git: "Git operations (read-only)"
+  node: "Node.js operations"
+  npm: "NPM operations (limited)"
+  grep: "Search text patterns"
+  find: "Find files and directories"
+  which: "Locate command"
+  head: "Display first lines of file"
+  tail: "Display last lines of file"
+  wc: "Word, line, character count"
+  
+# Security patterns to block
+forbidden_patterns:
+  - "rm\\s"
+  - "sudo\\s"
+  - "su\\s"
+  - "chmod\\s+x"
+  - "curl.*\\|"
+  - "wget.*\\|"
+  - "&\\s*$"
+  - ";\\s*rm"
+  - "\\|\\s*sh"
+  - "\\|\\s*bash"
+  - ">\\s*/dev/"
+  - "2>&1"
+
+# File path restrictions
+file_path_restrictions:
+  enabled: true
+  blocked_paths:
+    - "/etc/passwd"
+    - "/etc/shadow"
+    - "/root/"
+    - "/sys/"
+    - "/proc/"
+  allowed_extensions:
+    - ".txt"
+    - ".md"
+    - ".json"
+    - ".yaml"
+    - ".yml"
+    - ".js"
+    - ".ts"
+    - ".py"
+    - ".sh"
+
+# Environment variable policy
+environment_policy:
+  mode: whitelist
+  allowed_vars:
+    - PATH
+    - HOME
+    - USER
+    - SHELL
+    - PWD
+    - TERM
+    - LANG
+    - NODE_ENV
+
+# Command execution limits
+limits:
+  max_arguments: 20
+  max_command_length: 1000
+  timeout_max: 30000      # 30 seconds max
+  timeout_default: 10000  # 10 seconds default
+
+# Argument validation for specific commands
+allowed_arguments:
+  ls:
+    - "-l"
+    - "-a"
+    - "-la"
+    - "-h"
+    - "--help"
+  echo:
+    - "--help"
+  grep:
+    - "-i"
+    - "-l"
+    - "-n"
+    - "-r"
+    - "-v"
+    - "--help"
+  git:
+    - "status"
+    - "log"
+    - "diff"
+    - "show"
+    - "branch"
+    - "remote"
+    - "-v"
+    - "--oneline"
+    - "--stat"
+    - "--help"
+  npm:
+    - "list"
+    - "version"
+    - "info"
+    - "--version"
+    - "--help"
+  cat:
+    - "--help"
+  head:
+    - "-n"
+    - "--help"
+  tail:
+    - "-n"
+    - "--help"
+  find:
+    - "-name"
+    - "-type"
+    - "--help"

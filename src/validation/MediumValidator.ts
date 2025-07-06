@@ -42,17 +42,22 @@ export class MediumValidator extends BaseValidator {
 
       // If we have a command config, check arguments
       if (commandConfig) {
+        // Handle both CommandConfig and string formats
+        const commandConfigObj = typeof commandConfig === 'string' 
+          ? { description: commandConfig, allowed_args: [] }
+          : commandConfig;
+
         let isAllowed = false;
-        if (commandConfig.allowed_args.length > 0) {
+        if (commandConfigObj.allowed_args && commandConfigObj.allowed_args.length > 0) {
           // More flexible argument matching
-          isAllowed = commandConfig.allowed_args.some(allowedArg => 
+          isAllowed = commandConfigObj.allowed_args.some((allowedArg: string) => 
             trimmedArg === allowedArg || 
             (allowedArg.startsWith('-') && trimmedArg.startsWith(allowedArg))
           );
         }
 
         // Allow file paths for commands that require a file
-        if (commandConfig.requires_file && !trimmedArg.startsWith('-')) {
+        if (commandConfigObj.requires_file && !trimmedArg.startsWith('-')) {
           if (this.validateFilePath(trimmedArg)) {
             isAllowed = true;
           } else {

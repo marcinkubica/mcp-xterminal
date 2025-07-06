@@ -52,7 +52,7 @@ Successfully implemented a modular, configuration-driven command validation syst
 ## Usage
 
 ### Environment Variable
-Set `COMMAND_VALIDATION` to one of: `aggressive`, `medium`, `minimal`, `none`
+Set `COMMAND_VALIDATION` to one of: `aggressive`, `medium`, `minimal`, `none`, or a custom YAML file path
 
 ```bash
 # Use aggressive validation (default)
@@ -66,6 +66,12 @@ COMMAND_VALIDATION=minimal npm start
 
 # Use no validation
 COMMAND_VALIDATION=none npm start
+
+# Use custom validation configuration
+COMMAND_VALIDATION=config/validation/my-custom.yaml npm start
+
+# Use custom validation with absolute path
+COMMAND_VALIDATION=/path/to/my/custom-validation.yaml npm start
 ```
 
 ### Testing
@@ -92,6 +98,7 @@ All tests pass (70/70) with the new modular system:
 | **medium** | 32 whitelisted | Balanced security |
 | **minimal** | All with basic validation | Development environments |
 | **none** | All without validation | Local development only |
+| **custom** | User-defined | Flexible custom security |
 
 ## Configuration Schema
 
@@ -103,5 +110,53 @@ Each validation level supports:
 - `allowedArguments`: Per-command argument restrictions
 - `blockedPatterns`: Regex patterns for blocked content
 - `environment`: Environment variable restrictions
+
+## Custom Validation Support (NEW)
+
+### Custom YAML Configuration
+In addition to the built-in validation levels, users can now provide custom YAML configuration files:
+
+```bash
+# Using custom validation file
+COMMAND_VALIDATION=config/validation/my-custom.yaml
+```
+
+### Custom Configuration Features
+- **User-defined command whitelist**: Define your own allowed commands
+- **Custom security patterns**: Block specific dangerous operations
+- **File path restrictions**: Control access to sensitive files
+- **Environment variable policies**: Manage environment access
+- **Custom timeouts and limits**: Set execution boundaries
+- **Argument validation**: Define allowed arguments per command
+
+### Custom Validator Selection
+The system automatically selects the appropriate validator for custom configurations:
+- **High Security**: ≤10 commands + forbidden patterns → Aggressive Validator
+- **Medium Security**: ≤20 commands → Medium Validator
+- **Low Security**: >20 commands → Minimal Validator
+
+### Example Custom Configuration
+```yaml
+validation_level: custom
+description: "Development environment security"
+
+allowed_commands:
+  ls: "List directory contents"
+  cat: "Display file contents"
+  pwd: "Print working directory"
+  git: "Git operations"
+  node: "Node.js operations"
+
+forbidden_patterns:
+  - "rm\\s"
+  - "sudo\\s"
+  - "\\|\\s*sh"
+
+limits:
+  max_arguments: 20
+  timeout_max: 30000
+```
+
+For complete custom validation documentation, see [Custom Validation Guide](custom-validation-guide.md).
 
 The system is now fully operational and ready for production use with flexible security configurations.
