@@ -1,8 +1,8 @@
-# mcp xterminal
+# mcp-xterminal
 
 ![xterminal](xterminal.png)
 
-A MCP server that suppose work around Copilot inability to autonomously execute terminal commands.
+A MCP server that suppose to work around Copilot inability to autonomously execute terminal commands.
 
 Initially forked from [stat-guy/terminal](https://github.com/stat-guy/terminal)
 
@@ -16,9 +16,9 @@ Check PRs for work in progress and `docs/building` for iteration stages, work do
 
 Secure MCP server that enables AI agents to execute terminal commands with security controls:
 
-- **Whitelisted commands only** - Blocks dangerous commands (rm, curl, sudo, etc.)
+- **Whitelisted commands only** - Configurable blocking of commands (rm, curl, sudo, etc.)
 - **Directory boundaries** - Restricts access to specified directories
-- **Argument validation** - Prevents command injection attacks
+- **Argument validation** - Configurable prevention of command injection attacks
 - **MCP protocol compliant** - Works with VS Code Copilot and other MCP clients
 
 ## Tools provided
@@ -39,7 +39,7 @@ Secure MCP server that enables AI agents to execute terminal commands with secur
 
 ## Key Differences
 
-And they explain why Copilot Agent has no autorun mode.
+And these explain why Copilot Agent has no autorun mode.
 
 ### **`run_in_terminal`** (VS Code built-in):
 - Full shell access with no restrictions
@@ -83,6 +83,12 @@ Configure in VS Code MCP settings:
   }
 }
 ```
+
+`COMMAND_VALIDATION` is one of 
+- `aggressive` (default): Maximum security, 28 whitelisted commands
+- `medium`: Balanced security, 32 whitelisted commands  
+- `minimal`: Basic validation, no command whitelist
+- `none`: No validation, all commands allowed. Dangenrous on your laptop, safer for isolated deployments (ie. in docker)
 
 For custom validation configurations:
 ```json
