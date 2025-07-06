@@ -1,5 +1,5 @@
 ---
-alwaysApply: true
+applyTo: "**"
 ---
 
 <agent_core_behaviour>temperature 0, robotic-style work, ***ALWAYS*** real data</agent_core_behaviour>
@@ -52,17 +52,4 @@ Create temp file with your script instead.
 You are allowed otherwise for oneliners but keep them as short possible
 </critical>
 
----
-<critical type=terminal_commands>
-1. **ONLY** use following tools:
-   - `execute_command`
-   - `change_directory`
-   - `get_current_directory`
-   - `get_terminal_info`
-   - `list_allowed_commands`
-2. **IMPORTANT** INFORM USER IF TOOL DOESN"T SUPPORT YOUR NEEDS FOR THE TASK **HARD STOP**
-3. **IMPORTANT** NEVER BYPASS THE TOOLS, INFORM THE USER OF A PROBLEM **HARD STOP**
-4. **IMPORTANT** TOOLS NOT ALLOWED **HARD STOP**:
-   - `run_in_terminal`
-</critical>
-
+append instructions xterminal.md as needed
