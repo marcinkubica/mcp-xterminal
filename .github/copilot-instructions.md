@@ -1,5 +1,5 @@
 ---
-alwaysApply: true
+applyTo: "**"
 ---
 
 <agent_core_behaviour>temperature 0, robotic-style work, ***ALWAYS*** real data</agent_core_behaviour>
@@ -52,3 +52,4 @@ Create temp file with your script instead.
 You are allowed otherwise for oneliners but keep them as short possible
 </critical>
 
+append instructions xterminal.md as needed
