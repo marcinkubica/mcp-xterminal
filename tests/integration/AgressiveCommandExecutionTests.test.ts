@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { TerminalServer } from '../../src/index.js';
 import { McpError } from "@modelcontextprotocol/sdk/types.js";
 
-describe('Aggressive Security Command Execution Tests', () => {
+describe('Agressive Command Execution Tests', () => {
   let server: TerminalServer;
   let originalEnv: NodeJS.ProcessEnv;
 
