@@ -6,7 +6,7 @@ A MCP server that suppose to work around Copilot inability to autonomously execu
 
 Initially forked from [stat-guy/terminal](https://github.com/stat-guy/terminal)
 
-`Project is moving but is a prototype until release 0.1.0 (with npm package)`
+`Project is moving but is a prototype until release 1.0.0 (with npm package)`
 
 Check PRs for work in progress and `docs/building` for iteration stages, work done and  planned.
 
