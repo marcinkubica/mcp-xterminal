@@ -47,13 +47,9 @@ fail if .venv is not available, inform the user, stop further attempts
 </python_terminal_commands>
 
 <critical type=self_support>
-if you ever need to produce code to support your work
-which is useful in many scenarios, most notably Test Driven Development
-***NEVER EVER** do this
-```
-cd {some_folder} && cat > src/static/watchman/vendors/datadog/logs_plugin.py << 'EOF'
-"...some big script"
-you are allowed otherwise for oneliners but keep them as short possible
+If you ever need to produce code to support your work ***NEVER EVER** use `<< EOF` syntax
+Create temp file with your script instead.
+You are allowed otherwise for oneliners but keep them as short possible
 </critical>
 
 ---
