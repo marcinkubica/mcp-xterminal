@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.2.0]
 
 ### Added
 - **🔒 Automatic Boundary Directory Enforcement**: Server now automatically starts in a secure boundary directory

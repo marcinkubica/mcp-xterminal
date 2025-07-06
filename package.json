@@ -1,6 +1,6 @@
 {
   "name": "mcp-xterminal",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "MCP server for terminal command execution for VSCode",
   "license": "MIT",
   "type": "module",
