@@ -482,6 +482,9 @@ class SecureTerminalServer {
   }
 }
 
+// Export the class for testing
+export { SecureTerminalServer };
+
 const server = new SecureTerminalServer();
 server.run().catch((error) => {
   console.error("Fatal error running secure server:", error);
