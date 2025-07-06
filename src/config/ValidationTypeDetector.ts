@@ -25,7 +25,7 @@ export class ValidationTypeDetector {
 
     // Check if it's a built-in validation level
     if (validLevels.includes(normalizedValue)) {
-      console.log(`🔒 Using ${normalizedValue} validation level`);
+      console.error(`🔒 Using ${normalizedValue} validation level`);
       
       if (normalizedValue === 'none') {
         console.warn('🚨 WARNING: Using "none" validation level - ALL SECURITY PROTECTIONS DISABLED!');
@@ -38,7 +38,7 @@ export class ValidationTypeDetector {
 
     // Check if it's a custom YAML file path
     if (this.isCustomConfigPath(envValue)) {
-      console.log(`🔒 Using custom validation configuration: ${envValue}`);
+      console.error(`🔒 Using custom validation configuration: ${envValue}`);
       return { type: 'custom', value: envValue };
     }
 

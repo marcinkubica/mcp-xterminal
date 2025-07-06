@@ -93,7 +93,7 @@ allowed_commands:
     allowed_args: ['--version', 'list', 'ls', 'info', 'view', 'search', 'outdated', '--help']
     description: 'NPM operations'
   git:
-    allowed_args: ['status', 'log', '--oneline', 'branch', 'diff', 'show', 'config', '--help']
+    allowed_args: ['status', 'log', '--oneline', 'branch', 'diff', 'show', 'config', '--since', '--help']
     description: 'Git operations'
   which:
     allowed_args: ['--help']

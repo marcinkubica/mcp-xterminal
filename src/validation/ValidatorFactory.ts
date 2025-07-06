@@ -88,13 +88,13 @@ export class ValidatorFactory {
         const hasForbiddenPatterns = config.forbidden_patterns && config.forbidden_patterns.length > 0;
         
         if (commandCount <= 10 && hasForbiddenPatterns) {
-          console.log('🔒 Using aggressive validator for custom config (high security)');
+          console.error('🔒 Using aggressive validator for custom config (high security)');
           return new AggressiveValidator(config);
         } else if (commandCount <= 20) {
-          console.log('🔒 Using medium validator for custom config (balanced security)');
+          console.error('🔒 Using medium validator for custom config (balanced security)');
           return new MediumValidator(config);
         } else {
-          console.log('🔒 Using minimal validator for custom config (low security)');
+          console.error('🔒 Using minimal validator for custom config (low security)');
           return new MinimalValidator(config);
         }
       default:

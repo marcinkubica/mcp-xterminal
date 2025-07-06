@@ -42,7 +42,7 @@ export class ConfigLoader {
       // Validate the loaded configuration
       this.validateConfig(config, validationLevel);
       
-      console.log(`🔒 Loaded ${validationLevel} validation configuration from ${configPath}`);
+      console.error(`🔒 Loaded ${validationLevel} validation configuration from ${configPath}`);
       return config;
       
     } catch (error) {
@@ -104,7 +104,7 @@ export class ConfigLoader {
       // Validate the loaded configuration
       this.validateCustomConfig(config, resolvedPath);
       
-      console.log(`🔒 Loaded custom validation configuration from ${resolvedPath}`);
+      console.error(`🔒 Loaded custom validation configuration from ${resolvedPath}`);
       return config;
       
     } catch (error) {
@@ -172,7 +172,7 @@ export class ConfigLoader {
     }
     
     // Log validation level from custom config
-    console.log(`🔒 Custom configuration validation level: ${config.validation_level}`);
+    console.error(`🔒 Custom configuration validation level: ${config.validation_level}`);
     
     // Warn if custom config has no security restrictions
     if (config.validation_level === 'none' || 
