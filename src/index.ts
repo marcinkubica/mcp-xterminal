@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 // --- BOUNDARY DIR ENFORCEMENT HELPERS ---
 
 // Save the original working directory before any changes
@@ -432,10 +433,9 @@ class TerminalServer {
 export { TerminalServer };
 
 // Only run the server if this module is being executed directly
-if (require.main === module) {
-  const server = new TerminalServer();
-  server.run().catch((error) => {
-    console.error("Fatal error running server:", error);
-    (globalThis as any).process.exit(1);
-  });
-}
+// In ES modules, we always run the server when the module is imported
+const server = new TerminalServer();
+server.run().catch((error) => {
+  console.error("Fatal error running server:", error);
+  (globalThis as any).process.exit(1);
+});
